@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy
 import mysql.connector
 from mysql.connector import errorcode
+from pandas.io import sql
 MIN = 2014
 MAX = 2017
 
@@ -54,38 +55,41 @@ except mysql.connector.Error as err:
         print(err)
         exit(1)
 
-
+sql = "DROP TABLE violencia_contra_mulher"
+cursor.execute(sql)
 TABLE_SCHEMA = """
-CREATE TABLE IF NOT EXISTS `violencia_contra_mulher` (
+CREATE TABLE `violencia_contra_mulher` (
   `municipio_cod` INT(6),
   `municipio_fato` VARCHAR(32),
   `data_fato` DATE,
   `mes` INT(2),
   `ano` INT(4),
   `risp` VARCHAR(80),
-  `id` MEDIUMINT NOT NULL AUTO_INCREMENT,
   `rmbh` VARCHAR(90),
   `natureza_delito` VARCHAR(100),
-  `tentado_consumado` VARCHAR(9),
+  `tentado_consumado` VARCHAR(100),
   `qtde_vitimas` INT(2),
+  `id` MEDIUMINT NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB
 """
-
 try:
     cursor.execute(TABLE_SCHEMA)
     print("Tabela 'violencia' criada com sucesso.")
     i = 0
-    print('AQUI')
-    for val in df:
-        if(i == 0):
-            val.to_sql("violencia_domestica",cnx, if_exists='replace')
-            i +=1
-        else:
-            val.to_sql("violencia_domestica",cnx, if_exists='append')
+    for val in df:        
+        sql = "INSERT INTO violencia_contra_mulher (municipio_cod, municipio_fato,data_fato,mes,ano,risp,rmbh,natureza_delito,tentado_consumado,qtde_vitimas) VALUES (%s, %s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        data = val.values.tolist()
+        cursor.executemany(sql, data)
+        cnx.commit()
+    sql = "SELECT * from violencia_contra_mulher"
+    cursor.execute(sql)
+
+
+    resultado_violencia_contra_mulher = cursor.fetchall()
+     
 except mysql.connector.Error as err:
     if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-        print("Tabela 'violencia' já existe.")
         cnx.shutdown()
     else:
         print(err.msg)
@@ -95,9 +99,9 @@ finally:
         cnx.disconnect()
         cnx.close()
         
-# Conexão
+# Conexão -------------
 
-# Banco de Dados
+# Banco de Dados ----------
 
 # set_database()
 
@@ -107,9 +111,7 @@ finally:
 
 # config()
 
-# Consultas
-
-# cursor()
+# Consultas --------------
 
 # cmd_query()
 
@@ -117,7 +119,7 @@ finally:
 
 # get_rows() / get_row()
 
-# Outros
+# Outros --------------
 
 # cmd_quit()
 
